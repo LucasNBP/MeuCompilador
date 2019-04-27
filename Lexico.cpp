@@ -5,6 +5,8 @@
 using namespace std;
 
 #define Tam_Maximo 524288
+#define Tam_Max_ID 512
+#define Tam_MaxReservedWords 8
 
 struct Tokens{
 	string tokenValue;
@@ -19,8 +21,6 @@ struct valoresRetorno{
 	int contadorLinha;
 	Tokens tokenGerado;
 };
-
-//faltam simbolos " & | !
 
 /*
 Reserved words:
@@ -142,6 +142,40 @@ valoresRetorno gerarTokenMulExpo(char leitura[Tam_Maximo], int i, int contadorCo
 	return retornos;
 }
 
+//automato para trabalhar ID's e palavras reservadas
+valoresRetorno gerarTokenIDR(char leitura[Tam_Maximo], int i, int contadorColuna, int contadorLinha){
+	valoresRetorno retornos;
+	Tokens tokenGerado;
+	string acumularToken="";
+	acumularToken+=leitura[i];
+
+	i++;
+	contadorColuna++;
+	switch(leitura[i])
+	{
+		case '*':{ //expoente
+			acumularToken+=leitura[i];
+			tokenGerado.tokenValue=acumularToken;
+			tokenGerado.tokenName="**";
+			break;
+		}break;
+
+		default :{ //* p/ qualquer outro char
+			i--;
+			contadorColuna--;
+			tokenGerado.tokenValue=acumularToken;
+			tokenGerado.tokenName="*";
+		}break;
+	}
+
+	retornos.i=i;
+	retornos.contadorColuna=contadorColuna;
+	retornos.contadorLinha=contadorLinha;
+	retornos.tokenGerado=tokenGerado;
+
+	return retornos;
+}
+
 //estrutura principal
 int main(){
 	ios_base::sync_with_stdio(false);
@@ -175,12 +209,19 @@ int main(){
 		contadorColuna++;
 		switch (leitura[i])
 		{
+			//espaco
+			case 32:{
+				contadorColuna++;
+			}break;
+			
+			//quebra de linha
 			case 10:{
 				contadorLinha++;
 				contadorColuna=0;
 			}break;
 
-			case('='): case('.'): case(':'): case(';'): case('+'): case('-'): case('/'): case('%'): case('('): case(')'): case('['): case(']'):{
+			case('='): case('.'): case(':'): case(';'): case('+'): case('-'): case('/'): case('%'): 
+			case('('): case(')'): case('['): case(']'): case('&'): case('|'): case('!'):{
 				tokenGerado.tokenName=leitura[i];
 				tokenGerado.tokenValue=leitura[i];
 				tokenGerado.reservedWord=true;
@@ -215,6 +256,12 @@ int main(){
 				tokenGerado=retornos.tokenGerado;
 				tokenGerado.reservedWord=true;
 				listaTokens.push_back(tokenGerado);
+			}break;
+			
+			default :{
+				if((leitura[i]>64 && leitura[i]<91) || (leitura[i]>96 && leitura[i]<123)){
+					cout<<"\n viva?"<<endl;
+				}
 			}break;
 		}
 	}
