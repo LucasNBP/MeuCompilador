@@ -12,6 +12,7 @@ struct Tokens{
 	string tokenValue;
 	string tokenName;
 	bool reservedWord=false;
+	bool numReal=false;
 };
 
 //estrutura para receber o retorno informado pelos automatos
@@ -20,6 +21,7 @@ struct valoresRetorno{
 	int contadorColuna;
 	int contadorLinha;
 	Tokens tokenGerado;
+	bool flagParar=false;
 };
 
 /*
@@ -28,6 +30,11 @@ Reserved words:
 	$PARE $REAL $RECEBA $SE $SENAO $VAR $VET $. $: $; $<- $+ $- $* $/ $% $** $( $) $[ $] $< $>
 	$<= $>= $= $<> $" $& $| $!
 */
+
+//funcao para imprimir erro linha e coluna
+void imprimirErro(int contadorLinha, int contadorColuna){
+	cout<<contadorLinha<<" "<<contadorColuna<<endl;
+}
 
 //automato para trabalhar iniciando com <
 valoresRetorno gerarTokenMenor(char leitura[Tam_Maximo], int i, int contadorColuna, int contadorLinha){
@@ -143,31 +150,94 @@ valoresRetorno gerarTokenMulExpo(char leitura[Tam_Maximo], int i, int contadorCo
 }
 
 //automato para trabalhar ID's e palavras reservadas
-valoresRetorno gerarTokenIDR(char leitura[Tam_Maximo], int i, int contadorColuna, int contadorLinha){
+valoresRetorno gerarTokenIDR(char leitura[Tam_Maximo], int i, int contadorColuna, int contadorLinha, vector<string> listaPalavrasReservadas){
 	valoresRetorno retornos;
 	Tokens tokenGerado;
 	string acumularToken="";
 	acumularToken+=leitura[i];
-
+	
 	i++;
 	contadorColuna++;
-	switch(leitura[i])
-	{
-		case '*':{ //expoente
+	while((47<leitura[i] && leitura[i]<58) || (64<leitura[i] && leitura[i]<91) || (96<leitura[i] && leitura[i]<123)){
+		if(acumularToken.size()<Tam_Max_ID){
 			acumularToken+=leitura[i];
-			tokenGerado.tokenValue=acumularToken;
-			tokenGerado.tokenName="**";
+			i++;
+			contadorColuna++;
+		}else{
+			//escrever o erro aqui, na posicao anterior coluna--
+			imprimirErro(contadorLinha, contadorColuna-1);
+			retornos.flagParar=true;
 			break;
-		}break;
-
-		default :{ //* p/ qualquer outro char
-			i--;
-			contadorColuna--;
-			tokenGerado.tokenValue=acumularToken;
-			tokenGerado.tokenName="*";
-		}break;
+		}
 	}
+	
+	i--;
+	contadorColuna--;
+	tokenGerado.tokenValue=acumularToken;
+	
+	if(acumularToken.size()<=Tam_MaxReservedWords){
+		for(int i=0; i<listaPalavrasReservadas.size(); i++){
+			if(acumularToken==listaPalavrasReservadas[i]){
+				tokenGerado.tokenName=acumularToken;
+				tokenGerado.reservedWord=true;
+				//cout<<"palavra reservada\n";
+			}
+		}
+	}
+	
+	if(!tokenGerado.reservedWord){
+		tokenGerado.tokenName="ID";
+	}
+			
+	retornos.i=i;
+	retornos.contadorColuna=contadorColuna;
+	retornos.contadorLinha=contadorLinha;
+	retornos.tokenGerado=tokenGerado;
 
+	return retornos;
+}
+
+valoresRetorno gerarTokenNum(char leitura[Tam_Maximo], int i, int contadorColuna, int contadorLinha){
+	valoresRetorno retornos;
+	Tokens tokenGerado;
+	string acumularToken="";
+	acumularToken+=leitura[i];
+	bool virgula=false;
+	
+	i++;
+	contadorColuna++;
+	while((47<leitura[i] && leitura[i]<58) || leitura[i]==44){
+		if(acumularToken.size()<Tam_Max_ID){
+			if(virgula && leitura[i]==44){
+				imprimirErro(contadorLinha, contadorColuna-1);
+				retornos.flagParar=true;
+				break;
+			}	
+			acumularToken+=leitura[i];
+			if(leitura[i]==44){
+				virgula=true;
+				tokenGerado.numReal=true;
+			}
+			i++;
+			contadorColuna++;
+		}else{
+			//escrever o erro aqui, na posicao anterior coluna--
+			imprimirErro(contadorLinha, contadorColuna-1);
+			retornos.flagParar=true;
+			break;
+		}
+	}
+	
+	if(('a'<=leitura[i] && leitura[i]<='z') || ('A'<=leitura[i] && leitura[i]<='Z')){
+		imprimirErro(contadorLinha, contadorColuna-1);
+		retornos.flagParar=true;
+	}
+	
+	i--;
+	contadorColuna--;
+	tokenGerado.tokenValue=acumularToken;
+	tokenGerado.tokenName="NUM";
+				
 	retornos.i=i;
 	retornos.contadorColuna=contadorColuna;
 	retornos.contadorLinha=contadorLinha;
@@ -191,6 +261,32 @@ int main(){
 	vector<Tokens> listaTokens; //lista de tokens gerados
 	tamanhoLeitura = fread(leitura, sizeof(char), Tam_Maximo, stdin);
 	
+	/*vector<string> listaPalavrasReservadas{"ATEH", "BIT", "DE", "ENQUANTO", "ESCREVA", "FIM", "FUNCAO", "INICIO", "INTEIRO", 
+	                                       "LEIA", "NULO", "PARA", "PARE", "REAL", "RECEBA", "SE", "SENAO", "VAR", "VET"};
+	vector<string> listaPalavrasReservadas;
+	listaPalavrasReservadas.push_back("BIT");*/
+	
+	vector<string> listaPalavrasReservadas(19);
+	listaPalavrasReservadas[0]=("BIT");
+	listaPalavrasReservadas[1]=("ATEH");
+	listaPalavrasReservadas[2]=("DE");
+	listaPalavrasReservadas[3]=("ENQUANTO");
+	listaPalavrasReservadas[4]=("ESCREVA");
+	listaPalavrasReservadas[5]=("FIM");
+	listaPalavrasReservadas[6]=("FUNCAO");
+	listaPalavrasReservadas[7]=("INICIO");
+	listaPalavrasReservadas[8]=("INTEIRO");
+	listaPalavrasReservadas[9]=("LEIA");
+	listaPalavrasReservadas[10]=("NULO");
+	listaPalavrasReservadas[11]=("PARA");
+	listaPalavrasReservadas[12]=("PARE");
+	listaPalavrasReservadas[13]=("REAL");
+	listaPalavrasReservadas[14]=("RECEBA");
+	listaPalavrasReservadas[15]=("SE");
+	listaPalavrasReservadas[16]=("SENAO");
+	listaPalavrasReservadas[17]=("VAR");
+	listaPalavrasReservadas[18]=("VET");
+	
 	//conferindo se todos os caracteres pertencem as especificacoes
 	for(int i=0; i<tamanhoLeitura; i++){
 		if(leitura[i]>126 || leitura[i]<9 || (leitura[i]>10 && leitura[i]<32)){
@@ -209,9 +305,9 @@ int main(){
 		contadorColuna++;
 		switch (leitura[i])
 		{
-			//espaco
-			case 32:{
-				contadorColuna++;
+			//espaco ou tab
+			case 32: case 9:{
+				
 			}break;
 			
 			//quebra de linha
@@ -258,17 +354,47 @@ int main(){
 				listaTokens.push_back(tokenGerado);
 			}break;
 			
+			//constantes e IDs
 			default :{
 				if((leitura[i]>64 && leitura[i]<91) || (leitura[i]>96 && leitura[i]<123)){
-					cout<<"\n viva?"<<endl;
+					//cout<<"\n viva?"<<endl;
+					retornos=gerarTokenIDR(leitura, i, contadorColuna, contadorLinha, listaPalavrasReservadas);
+					i=retornos.i;
+					contadorLinha=retornos.contadorLinha;
+					contadorColuna=retornos.contadorColuna;
+					tokenGerado=retornos.tokenGerado;
+					if(retornos.flagParar){
+						flagParar=true;
+					}
+					listaTokens.push_back(tokenGerado);
+				}else if((leitura[i]>47 && leitura[i]<58)){
+					retornos=gerarTokenNum(leitura, i, contadorColuna, contadorLinha);
+					i=retornos.i;
+					contadorLinha=retornos.contadorLinha;
+					contadorColuna=retornos.contadorColuna;
+					tokenGerado=retornos.tokenGerado;
+					if(retornos.flagParar){
+						flagParar=true;
+					}
+					listaTokens.push_back(tokenGerado);
+				}else{
+					imprimirErro(contadorLinha, contadorColuna);
 				}
 			}break;
 		}
 	}
 
-	for(int i=0; i<listaTokens.size(); i++){
-		cout<<"\n"<<listaTokens[i].tokenName<<"\n";
+	/*for(int i=0; i<listaTokens.size(); i++){
+		cout<<"\n"<<listaTokens[i].tokenValue<<"\n";
+	}*/
+	
+	if(flagParar){
+		return 0;
+	}else{
+		cout<<"OK\n";
 	}
+	
+	//analise sintatica
 	
 	return 0;
 }
