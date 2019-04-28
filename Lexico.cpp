@@ -197,6 +197,7 @@ valoresRetorno gerarTokenIDR(char leitura[Tam_Maximo], int i, int contadorColuna
 	return retornos;
 }
 
+//automato para trabalhar com constantes numericas
 valoresRetorno gerarTokenNum(char leitura[Tam_Maximo], int i, int contadorColuna, int contadorLinha){
 	valoresRetorno retornos;
 	Tokens tokenGerado;
@@ -242,6 +243,79 @@ valoresRetorno gerarTokenNum(char leitura[Tam_Maximo], int i, int contadorColuna
 	retornos.contadorColuna=contadorColuna;
 	retornos.contadorLinha=contadorLinha;
 	retornos.tokenGerado=tokenGerado;
+
+	return retornos;
+}
+
+//automato para trabalhar string comecadas em "
+valoresRetorno gerarTokenString(char leitura[Tam_Maximo], int i, int contadorColuna, int contadorLinha){
+	valoresRetorno retornos;
+	Tokens tokenGerado;
+	string acumularToken="";
+	bool fecharAspas=false;
+		
+	i++;
+	contadorColuna++;
+	
+	while(!fecharAspas){
+		if(leitura[i]==34){
+			fecharAspas=true;
+			break;
+		}else{
+			acumularToken+=leitura[i];
+			if(leitura[i]==10){
+				contadorLinha++;
+				contadorColuna=0;
+			}
+			i++;
+			contadorColuna++;
+		}
+	}
+	
+	tokenGerado.tokenValue=acumularToken;
+	tokenGerado.tokenName="STRING";
+	
+	retornos.i=i;
+	retornos.contadorColuna=contadorColuna;
+	retornos.contadorLinha=contadorLinha;
+	retornos.tokenGerado=tokenGerado;
+	
+	/*while((47<leitura[i] && leitura[i]<58) || leitura[i]==44){
+		if(acumularToken.size()<Tam_Max_ID){
+			if(virgula && leitura[i]==44){
+				imprimirErro(contadorLinha, contadorColuna-1);
+				retornos.flagParar=true;
+				break;
+			}	
+			acumularToken+=leitura[i];
+			if(leitura[i]==44){
+				virgula=true;
+				tokenGerado.numReal=true;
+			}
+			i++;
+			contadorColuna++;
+		}else{
+			//escrever o erro aqui, na posicao anterior coluna--
+			imprimirErro(contadorLinha, contadorColuna-1);
+			retornos.flagParar=true;
+			break;
+		}
+	}
+	
+	if(('a'<=leitura[i] && leitura[i]<='z') || ('A'<=leitura[i] && leitura[i]<='Z')){
+		imprimirErro(contadorLinha, contadorColuna-1);
+		retornos.flagParar=true;
+	}
+	
+	i--;
+	contadorColuna--;
+	tokenGerado.tokenValue=acumularToken;
+	tokenGerado.tokenName="NUM";
+				
+	retornos.i=i;
+	retornos.contadorColuna=contadorColuna;
+	retornos.contadorLinha=contadorLinha;
+	retornos.tokenGerado=tokenGerado;*/
 
 	return retornos;
 }
@@ -306,7 +380,7 @@ int main(){
 		switch (leitura[i])
 		{
 			//espaco ou tab
-			case 32: case 9: case '"':{
+			case 32: case 9:{
 				
 			}break;
 			
@@ -354,6 +428,18 @@ int main(){
 				listaTokens.push_back(tokenGerado);
 			}break;
 			
+			case '"':{
+				retornos=gerarTokenString(leitura, i, contadorColuna, contadorLinha);
+				i=retornos.i;
+				contadorLinha=retornos.contadorLinha;
+				contadorColuna=retornos.contadorColuna;
+				tokenGerado=retornos.tokenGerado;
+				listaTokens.push_back(tokenGerado);
+				if(retornos.flagParar){
+					flagParar=true;
+				}		
+			}break;
+			
 			//constantes e IDs
 			default :{
 				if((leitura[i]>64 && leitura[i]<91) || (leitura[i]>96 && leitura[i]<123)){
@@ -385,9 +471,9 @@ int main(){
 		}
 	}
 
-	/*for(int i=0; i<listaTokens.size(); i++){
-		cout<<"\n"<<listaTokens[i].tokenValue<<"\n";
-	}*/
+	for(int i=0; i<listaTokens.size(); i++){
+		cout<<"\n"<<listaTokens[i].tokenName<<" "<<listaTokens[i].tokenValue<<"\n";
+	}
 	
 	if(flagParar){
 		return 0;
