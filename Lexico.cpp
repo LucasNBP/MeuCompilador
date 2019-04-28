@@ -306,7 +306,7 @@ int main(){
 		switch (leitura[i])
 		{
 			//espaco ou tab
-			case 32: case 9:{
+			case 32: case 9: case '"':{
 				
 			}break;
 			
@@ -379,6 +379,7 @@ int main(){
 					listaTokens.push_back(tokenGerado);
 				}else{
 					imprimirErro(contadorLinha, contadorColuna);
+					flagParar=true;
 				}
 			}break;
 		}
