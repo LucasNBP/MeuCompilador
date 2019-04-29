@@ -4,7 +4,7 @@
 #include <vector>
 using namespace std;
 
-#define Tam_Maximo 524288
+#define Tam_Maximo 524300
 #define Tam_Max_ID 512
 #define Tam_MaxReservedWords 8
 
@@ -248,27 +248,75 @@ valoresRetorno gerarTokenNum(char leitura[Tam_Maximo], int i, int contadorColuna
 }
 
 //automato para trabalhar string comecadas em "
-valoresRetorno gerarTokenString(char leitura[Tam_Maximo], int i, int contadorColuna, int contadorLinha){
+valoresRetorno gerarTokenString(char leitura[Tam_Maximo], int i, int contadorColuna, int contadorLinha, int tamanhoLeitura){
 	valoresRetorno retornos;
 	Tokens tokenGerado;
 	string acumularToken="";
 	bool fecharAspas=false;
+	bool flagQuebraLinha=false;
+	int contadorColunaNL;
+	int contadorLinhaNL;
+	
+	if(!((i+1)<tamanhoLeitura)){
+		imprimirErro(contadorLinha, contadorColuna);
+		tokenGerado.tokenValue=acumularToken;
+		tokenGerado.tokenName="STRING";
+		retornos.flagParar=true;
+		retornos.i=i;
+		retornos.contadorColuna=contadorColuna;
+		retornos.contadorLinha=contadorLinha;
+		retornos.tokenGerado=tokenGerado;
 		
+		return retornos;
+	}
+	
 	i++;
 	contadorColuna++;
-	
+	contadorColunaNL=contadorColuna;
+	contadorLinhaNL=contadorLinha;
+
 	while(!fecharAspas){
 		if(leitura[i]==34){
 			fecharAspas=true;
 			break;
 		}else{
+			if(!(acumularToken.size()<Tam_Max_ID)){
+				if(flagQuebraLinha){
+					imprimirErro(contadorLinhaNL, contadorColunaNL);
+				}else{
+					imprimirErro(contadorLinha, contadorColuna-1);
+				}
+				contadorColuna--;
+				retornos.flagParar=true;
+				i--;
+				break;
+			}
+			flagQuebraLinha=false;
 			acumularToken+=leitura[i];
 			if(leitura[i]==10){
+				
+				if(!((i+1)<tamanhoLeitura)){
+					imprimirErro(contadorLinha, contadorColuna);
+					retornos.flagParar=true;
+					break;
+				}
+				
+				contadorColunaNL=contadorColuna;
+				contadorLinhaNL=contadorLinha;
 				contadorLinha++;
-				contadorColuna=0;
+				contadorColuna=1;
+				flagQuebraLinha=true;
 			}
-			i++;
-			contadorColuna++;
+			if(!((i+1)<tamanhoLeitura)){				
+				imprimirErro(contadorLinha, contadorColuna);
+				retornos.flagParar=true;
+				break;
+			}else{
+				i++;
+				if(!flagQuebraLinha){
+					contadorColuna++;
+				}
+			}
 		}
 	}
 	
@@ -280,43 +328,6 @@ valoresRetorno gerarTokenString(char leitura[Tam_Maximo], int i, int contadorCol
 	retornos.contadorLinha=contadorLinha;
 	retornos.tokenGerado=tokenGerado;
 	
-	/*while((47<leitura[i] && leitura[i]<58) || leitura[i]==44){
-		if(acumularToken.size()<Tam_Max_ID){
-			if(virgula && leitura[i]==44){
-				imprimirErro(contadorLinha, contadorColuna-1);
-				retornos.flagParar=true;
-				break;
-			}	
-			acumularToken+=leitura[i];
-			if(leitura[i]==44){
-				virgula=true;
-				tokenGerado.numReal=true;
-			}
-			i++;
-			contadorColuna++;
-		}else{
-			//escrever o erro aqui, na posicao anterior coluna--
-			imprimirErro(contadorLinha, contadorColuna-1);
-			retornos.flagParar=true;
-			break;
-		}
-	}
-	
-	if(('a'<=leitura[i] && leitura[i]<='z') || ('A'<=leitura[i] && leitura[i]<='Z')){
-		imprimirErro(contadorLinha, contadorColuna-1);
-		retornos.flagParar=true;
-	}
-	
-	i--;
-	contadorColuna--;
-	tokenGerado.tokenValue=acumularToken;
-	tokenGerado.tokenName="NUM";
-				
-	retornos.i=i;
-	retornos.contadorColuna=contadorColuna;
-	retornos.contadorLinha=contadorLinha;
-	retornos.tokenGerado=tokenGerado;*/
-
 	return retornos;
 }
 
@@ -377,6 +388,9 @@ int main(){
 	//analise lexica
 	for(int i=0; i<tamanhoLeitura; i++){
 		contadorColuna++;
+		/*cout<<"contador coluna "<<contadorColuna<<endl;
+		cout<<"contador linha "<<contadorLinha<<endl;*/
+		
 		switch (leitura[i])
 		{
 			//espaco ou tab
@@ -429,7 +443,7 @@ int main(){
 			}break;
 			
 			case '"':{
-				retornos=gerarTokenString(leitura, i, contadorColuna, contadorLinha);
+				retornos=gerarTokenString(leitura, i, contadorColuna, contadorLinha, tamanhoLeitura);
 				i=retornos.i;
 				contadorLinha=retornos.contadorLinha;
 				contadorColuna=retornos.contadorColuna;
@@ -471,9 +485,9 @@ int main(){
 		}
 	}
 
-	for(int i=0; i<listaTokens.size(); i++){
+	/*for(int i=0; i<listaTokens.size(); i++){
 		cout<<"\n"<<listaTokens[i].tokenName<<" "<<listaTokens[i].tokenValue<<"\n";
-	}
+	}*/
 	
 	if(flagParar){
 		return 0;
