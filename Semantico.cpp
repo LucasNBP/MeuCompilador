@@ -1221,6 +1221,10 @@ void reduce59(){
 void reduce60(){
 	slr.pop();
 	slr.pop();
+	slr.pop();
+	slr.pop();
+	slr.pop();
+	slr.pop();
 	tokenAuxFrente.tokenName="$elemento$";
 	listaTokens.insert(listaTokens.begin(), tokenAuxFrente);
 }
@@ -1727,6 +1731,11 @@ int main(){
 	if(flagParar){
 		return 0;
 	}
+	
+	/*for(int i=0; i<listaTokens.size(); i++){
+		cout<<listaTokens[i].tokenName<<" ";
+	}
+	cout<<endl;*/
 	
 	//cout<<"OK\n";	
 	//analise sintatica
