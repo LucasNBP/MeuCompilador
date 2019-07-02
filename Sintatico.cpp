@@ -1871,12 +1871,117 @@ int main(){
 	mapaSimbolos["$OP3$"]=84;
 	mapaSimbolos["$valores$"]=85;
 	mapaSimbolos["$valor$"]=86;
+	
+	//semantico:
+	vector<Tokens> listaVariaveisG;
+	vector<Tokens> listaFuncoes;
+	vector<Tokens> listaVariaveisL;
+	bool flagFuncoes=false;
+	bool flagIDfuncao=false;
+	bool flagComandos=false;
+	
+	bool flagFuncaoNaoDeclarada=false;
+	bool flagVariavelNaoDeclarada=false;
+	bool flagRedeclararFuncao=false;
+	bool flagRedeclararVariavel=false;
+	bool flagConflitoNome=false;
+	bool flagEncontrou=false;
 		
 	while(!listaTokens.empty() && !flagSintaticoOff && !flagSintaticoAcc){
 		lerEstado=slr.top();
 		lerToken=mapaSimbolos[listaTokens.front().tokenName];
 		lerMatriz=matrizSlr[lerEstado][lerToken];
 		lerMatrizAux="";
+		
+		if(listaTokens.front().tokenName=="ID"){
+			if(!flagFuncoes){
+				for(int i=0; i<listaVariaveisG.size(); i++){
+					if(listaTokens.front().tokenValue==listaVariaveisG[i].tokenValue){
+						flagRedeclararVariavel=true;
+						break;
+					}
+				}
+				listaVariaveisG.push_back(listaTokens.front());
+			}else if(flagIDfuncao){
+				for(int i=0; i<listaVariaveisG.size(); i++){
+					if(listaTokens.front().tokenValue==listaVariaveisG[i].tokenValue){
+						flagConflitoNome=true;
+						break;
+					}
+				}
+				for(int i=0; i<listaFuncoes.size(); i++){
+					if(listaTokens.front().tokenValue==listaFuncoes[i].tokenValue){
+						flagRedeclararFuncao=true;
+						break;
+					}
+				}
+				listaFuncoes.push_back(listaTokens.front());
+				flagIDfuncao=false;
+			}else if(!flagComandos){
+				for(int i=0; i<listaVariaveisL.size(); i++){
+					if(listaTokens.front().tokenValue==listaVariaveisL[i].tokenValue){
+						flagRedeclararVariavel=true;
+						break;
+					}
+				}
+				for(int i=0; i<listaVariaveisG.size(); i++){
+					if(listaTokens.front().tokenValue==listaVariaveisG[i].tokenValue){
+						flagRedeclararVariavel=true;
+						break;
+					}
+				}
+				for(int i=0; i<listaFuncoes.size(); i++){
+					if(listaTokens.front().tokenValue==listaFuncoes[i].tokenValue){
+						flagConflitoNome=true;
+						break;
+					}
+				}
+				listaVariaveisL.push_back(listaTokens.front());
+			}else{
+				if(listaTokens[1].tokenName=="("){
+					flagEncontrou=false;
+					for(int i=0; i<listaFuncoes.size(); i++){
+						if(listaTokens.front().tokenValue==listaFuncoes[i].tokenValue){
+							flagEncontrou=true;
+							break;
+						}
+					}
+					if(!flagEncontrou){
+						flagFuncaoNaoDeclarada=true;
+					}
+				}else{
+					flagEncontrou=false;
+					for(int i=0; i<listaVariaveisL.size(); i++){
+						if(listaTokens.front().tokenValue==listaVariaveisL[i].tokenValue){
+							flagEncontrou=true;
+							break;
+						}
+					}
+					for(int i=0; i<listaVariaveisG.size(); i++){
+						if(listaTokens.front().tokenValue==listaVariaveisG[i].tokenValue){
+							flagEncontrou=true;
+							break;
+						}
+					}
+					if(!flagEncontrou){
+						flagVariavelNaoDeclarada=true;
+					}
+				}
+			}
+		}else if(listaTokens.front().tokenName=="FUNCAO"){
+			flagFuncoes=true;
+			flagIDfuncao=true;
+			flagComandos=false;
+			listaVariaveisL.clear();
+		}else if(listaTokens.front().tokenName=="INICIO"){
+			flagComandos=true;
+		}else if(listaTokens.front().tokenName=="VAR"){
+			flagComandos=false;
+		}else if(listaTokens.front().tokenName=="FIM" && listaTokens[1].tokenName=="VAR"){
+			flagComandos=false;
+			listaVariaveisL.clear();
+		}
+		
 		if(lerMatriz[0]=='s'){
 			for(int i=1; i<lerMatriz.size();i++){
 				lerMatrizAux+=lerMatriz[i];
@@ -2096,9 +2201,46 @@ int main(){
 	}
 	
 	if(flagSintaticoOff){
-		cout<<"NO"<<endl;
+		//cout<<"NO"<<endl;
 		return 0;
 	}
-	cout<<"YES"<<endl;
+	//cout<<"YES"<<endl;
+	
+	/*cout<<"Variaveis Globais:"<<endl;
+	for(int i=0; i<listaVariaveisG.size(); i++){
+		cout<<listaVariaveisG[i].tokenValue<<endl;
+	}
+	
+	cout<<"Funcoes:"<<endl;
+	for(int i=0; i<listaFuncoes.size(); i++){
+		cout<<listaFuncoes[i].tokenValue<<endl;
+	}*/
+	
+	if(flagFuncaoNaoDeclarada){
+		cout<<"YES"<<endl;
+	}else{
+		cout<<"NO"<<endl;
+	}
+	if(flagVariavelNaoDeclarada){
+		cout<<"YES"<<endl;
+	}else{
+		cout<<"NO"<<endl;
+	}
+	if(flagRedeclararFuncao){
+		cout<<"YES"<<endl;
+	}else{
+		cout<<"NO"<<endl;
+	}
+	if(flagRedeclararVariavel){
+		cout<<"YES"<<endl;
+	}else{
+		cout<<"NO"<<endl;
+	}
+	if(flagConflitoNome){
+		cout<<"YES"<<endl;
+	}else{
+		cout<<"NO"<<endl;
+	}
+	
 	return 0;
 }
